@@ -6,16 +6,6 @@ This repository contains three python files path_planner, scene_display, and vel
 
 Before using these programs, users should read Mason and Lynch's Stable Pushing: Mechanics, Controlability, and Planning, as well as John Carey's summary of the planner which builds off of Masona and Lynch's work.
 
-Within path_planner, users should define a puzzle to be solved in a main() function. Several example main functions are commented out in the program for reference. Users must define the following in the main functions to solve puzzles:
+Within path_planner, users should define a puzzle to be solved in a main() function. Several example main functions are commented out in the program for reference.
 
-slider object
-edges included in the slider
-vertices of the slider
-obstacles
-edges to included in the obstacles  - should be different than those used in the slider, even if they are the same shape, since pushing velocities are determined by edge. If the user wants obstacles to be limited to translations, as is currently the case,
-the user will need to define unique edges for use in the obstacle. Velocities for the edge (translations only for obstacles) are created within the Edge class when edges are associated with sliders or obstacles in the creation of an object
-vertices to include in the obstacles
-initial pose for the slider
-goal pose for the slider
-dimensions of the workspace: min, max, and step size for x, y, and theta
-cost variables: max nodes, max node cost, and variables to determine to cost to come of a node
+One key thing to note is that edges should be defined separately for the slider and obstacles. Velocities are associated with specific edges. If a users wants to have obstacles only move from translations, as is the case in the current implementation, the edges of the slider and obstacles must be defined separately. The initialization of a slider or obstacle object (if movable) calls functions within the Edge class to find velocities. The example main functions show clearly how different edges should be used for the slider and obstacles.
