@@ -1,0 +1,18 @@
+.PROGRAM pushing()
+  SPEED 65 MONITOR
+  OPENI
+  PARAMETER HAND.TIME = 0.16
+  LEFTY
+  BASE 96.9,-257.21,-166.4,180
+  above = 70
+  SET null.tool = TRANS(0,0,0,0,0,0)
+  TOOL null.tool
+  SET pusher = TRANS(-50.17,242.12,-3.36,0,180,180)
+  SPEED 100 ALWAYS
+  APPRO pusher,above
+  SPEED 10
+  MOVES pusher
+  CLOSEI
+  DEPARTS above
+ 
+

@@ -1,0 +1,286 @@
+\documentstyle[12pt]{article}
+
+\textheight 8.5in
+\textwidth 6.8in
+\topmargin -0.25in
+\oddsidemargin -0.25in
+\evensidemargin -0.25in
+
+\begin{document}
+\begin{centering}
+{\bf{\LARGE The Stable Pushing Planner}} \\
+\vspace*{0.2in}
+Kevin M. Lynch \hspace{0.2in} Constantinos Nikou \hspace{0.2in} Matthew T. Mason\\
+The Robotics Institute \\
+Carnegie Mellon University \\
+August 20, 1995 \\
+\end{centering}
+
+\section{Overview}
+
+This document describes the code implementing the stable pushing planner
+presented in ``Stable Pushing:  Mechanics, Controllability, and Planning,''
+by Kevin M. Lynch and Matthew T. Mason.  This paper is to appear in the
+International Journal of Robotics Research and is available on the
+World Wide Web at 
+{\verb+http://www.cs.cmu.edu/afs/cs/usr/lynch/research/kml-stable.html+}.
+
+The code allows a user to automatically find pushing plans to move an
+object among obstacles.  The strategy uses stable pushes, which keep
+the pushed object fixed to the pusher as it moves.  The pusher is
+assumed to be a flat edge.  The code consists of three major portions:
+
+\begin{enumerate}
+\item The object editor, which allows the user to enter a polygonal object
+using a graphical interface.  The user must specify the center of mass of
+the object, the coefficient of friction at the pushing contacts,
+and the edges of the object that the robot can push.
+The user may specify that the pusher act on the convex hull of the object.
+The editor then automatically determines the set of
+stable pushing directions for each edge, for use in the pushing planner.
+
+\item The pushing world editor, which allows the user to specify pushing
+problems for the objects created with the object editor.  This consists
+of drawing the obstacles and specifying the start and goal positions.
+The editor also invokes the planner, and if a solution is found, it 
+displays and animates the path.
+
+\item The push planner.  This is normally invoked by the world editor,
+but it can also be used from the command line.  The planner also (if
+desired) writes an Adept V+ file to execute the pushing path on an
+Adept robot.
+\end{enumerate}
+
+The object and world editors are written in Tcl/Tk, and the planner is
+written in C.  For best results, the editor should be run on a fast machine
+with a color monitor and plenty of swap space.
+
+\section{The object editor}
+
+The object editor is a graphical interface that allows the user to
+analyze objects for pushing.  The object editor is invoked from within the
+world editor, described in the next section.  
+
+The polygonal object is entered by mouse clicks.  The center of mass
+(technically, its center of friction)
+is assumed to be at (0, 0), and the user must specify
+the coefficient of friction at the pushing contacts.  By clicking on
+an edge of the object, the user marks (or unmarks) it as a possible
+edge for pushing.  The user may also choose to use the pushing edges
+defined by the convex hull of the object.
+
+Once the user has entered the object, specified the friction coefficient,
+and chosen a set of possible pushing edges, the set of stable pushing
+directions for each edge can be calculated.  The planner actually uses
+only the extreme velocity directions, as described in the paper.   
+These velocity directions are displayed as $(v_x, v_y, \omega)$, where
+$v_x$ is the $x$ velocity of the center of mass, $v_y$ is the $y$ velocity,
+and $\omega$ is the angular velocity.  
+When the user runs the analysis, lines will appear on the screen
+that bound the sets of stable rotation centers.  These lines are described
+in Figure~11 of the paper.  They are provided to aid the user's intuition
+when checking the stable pushing directions for a single edge. 
+
+Once a set of pushing edges has been chosen and the stable pushing
+directions have been calculated, the user can save the object to the
+file {\tt objects.tcl} read by the world editor.  The object is now
+available for specifying pushing problems.  In practice, only a small
+number of pushing edges should be used, as the time and space required
+by the search increases with the number of available pushing motions.
+It is desirable, however, that the set of pushing edges yield {\em
+small-time local controllability\/}, so the object can be
+maneuvered in tight spaces.  See the paper for details.
+
+Some details to be aware of:
+\begin{itemize}
+\item There is no function to load a previously analyzed object into the
+object editor, or for deleting an object from {\tt objects.tcl}.
+The user can do this manually by editing the file.
+\item The editor may be excessively slow if the grid spacing (under
+{\tt Options}) is too small.  This is because the editor must draw crosses
+at each grid point.
+\end{itemize}
+
+\subsection{Global variables}
+
+Colors used in the object editor are defined in {\tt editcolors.tcl}.
+The following global variables are defined in 
+{\tt obeditglobals.tcl}.
+
+\begin{description}
+\item[SAFETY]  As described in Figure 11(b) of the paper, the lines 
+a distance $r^2/p$ from the center of mass of the object should be
+slightly more distant.  This is accounted for by multiplying 
+$r^2/p$ by the constant SAFETY.  The default value is 1.0.
+\item[FUZZY]  This constant is used for fuzzy math, to account
+for loss of precision by floating point math.  For example, to 
+test if a point lies on a line, we actually only require that it
+lies very close to it. 
+\item[FuzzyDist]  If two extremal stable rotation centers are within a distance
+FuzzyDist of each other, they are assumed equivalent, and one of them 
+is discarded.  
+\item [MaxRCDist]  If a stable rotation center is greater than MaxRCDist
+from the center of mass of the object, then it is essentially a translation,
+and it is discarded.
+\end{description}
+
+\section{The world editor}
+
+The world editor allows the user to draw obstacle fields, move the
+start and goal position of the object, invoke the planner, display
+the results of the planner, and print them to a postscript file.
+The interface should be mostly self-explanatory.
+
+The {\tt Options} button allows the user to change the size of the
+pushing world and the resolution of the snap grid.  The user can
+also specify the cost function for the planner.  The cost of the
+plan is given by the cost of the action (pushing direction) changes,
+the pushing edge changes, and the number of pushes.  The cost for
+each of these must be integral, as described in the paper.  The user
+may also specify the size of the goal region, the pushing step length,
+and the size of the configuration space grid used to check for prior
+occupancy.  (All angles are specified in degrees.)  We recommend
+using the default goal size, step length, and grid size to ensure
+``reasonable'' run times for the planner.
+
+Some things to know:
+\begin{itemize}
+\item In most text entries (except the Load, Save, and PS file windows) 
+pressing Return will not secure the entry, but will write a string
+similar to ``\verb+\+0xd''.  This string {\em will\/} be included in the
+entry, so it is possible to enter, for example, a grid spacing of
+``3.0\verb+\+0xd''.
+In fact, all entries will accept any string.  So entering a grid 
+spacing of ``Bob'' will not result
+in a editor error, but the planner will give an error (or strange
+result).  Also, highlighting text in an entry has no use nor function.
+
+\item With Polygon entry, if MaxVertices is set to 10, sometimes the user 
+can enter a polygon with up to 10 vertices, other times up to 9.  This has 
+to do with the way Tcl/Tk deals with lists of coordinates for a polygon.
+
+\item The animate function will use the last path (default: {\tt push.path}) 
+created.  Also, running the planner will write a temporary file called 
+{\tt planner.tmp}.
+
+\item Obstacle rotation always begins with 0 degrees, meaning if you rotate an 
+obstacle, close the rotation window, and decide to rotate the object
+again, the CURRENT position will be considered 0 degrees.
+
+\item When saving both a problem and its path, the extension of the problem 
+name is ignored when writing to the path.  For example, a problem
+called ``test.problem'' would have an associated path name of
+``test.path''.  A problem called ``test.fred'' would also have an
+associated path name of ``test.path'', so different problem names
+should not only differ by filename extension.
+\end{itemize}
+
+\subsection{Global variables}
+
+Colors used in the object editor are defined in {\tt editcolors.tcl}.
+The world editor uses the following global variables, specified in
+{\tt globals.tcl}.
+
+\begin{description}
+\item[ColorFile]  The editor was designed to be used on a color monitor.
+If you must use a monochrome monitor, however, set this variable to
+{\tt editbw.tcl} instead of {\tt editcolors.tcl}.  This will make the editor
+easier to use.
+\item[PMConversion]  The conversion factor from screen pixels to ``virtual
+millimeters,'' where ``millimeters'' = pixels/PMConversion.  
+(Note that the unit is millimeters for use with the Adept.  Otherwise
+the scale does not matter.)
+\item[XMAX]  Default size of the world in the $x$ direction, in millimeters.
+\item[YMAX]  Default size of the world in the $y$ direction, in millimeters.
+\item[MaxObstacles]  Maximum number of obstacles that the editor will
+allow to be placed in the world.
+\item[MaxVertices]  Maximum number of vertices that an obstacle can have.
+\end{description}
+
+\section{The push planner}
+
+The push planner {\tt pplanner} is made from {\tt pplanner.c}.
+It is normally invoked by the world editor, but can also be
+invoked from the command line by {\tt pplanner [-adept]} {\em $<$infile$>$},
+where {\em infile\/} is the problem specification file.  If no
+file is specified, the planner defaults to the file {\tt push.problem}.
+If the {\tt -adept} flag is given, the planner will write a V+ pushing
+program for an Adept robot.
+
+The planner is a simple best-first search as described in the paper.
+In this implementation, we only consider collisions between the 
+object and the obstacles; we ignore collisions between the pushing
+robot and the obstacles.  The robot is essentially assumed to be
+an infinitely thin pushing surface.
+
+\subsection{Global variables}
+
+The planner uses the following global variables, defined in 
+{\tt pglobals.h}.
+
+\begin{description}
+\item[INFILE] Problem file used by planner if no other file is specified (only relevant when running
+planner from the command line).
+\item[CONTROLOUT] Name of the control file written by the planner.
+\item[PATHOUT] Name of the path file written by the planner (must be the same as editor global 
+PathOut).
+\item[MAXOBSTACLES] Maximum number of obstacles allowed in the world (must not be less than editor 
+global MaxObstacles).
+\item[MAXVERTICES] Maximum number of vertices allowed in an obstacle (must not be less than editor 
+global MaxVertices).
+\item[MAXCONTROLS] Maximum number of different velocities one pushing edge can be associated with.
+\item[MAXEDGES] Maximum number of edges an object can have.
+\item[MAXCOST] Upper limit on allowable cost of a pushing plan.
+\item[ROBOTPOLY] Maximum number of polygons in the object representation.
+\item[MAXNODES] Maximum number of search nodes.  This value should be 
+as large as possible (preferably 1 million or more) subject to memory
+limitations.
+\item[XCELLS]  The maximum number of cells along the $x$-axis of the 
+configuration space grid.  The size of each cell in the $x$ direction,
+given in the world editor, should be sufficiently large that XCELLS cells
+covers XMAX, the $x$ size of the world.
+\item[YCELLS]  The maximum number of cells along the $y$-axis of the
+configuration space grid.   The size of each cell in the $y$ direction,
+given in the world editor, should be sufficiently large that YCELLS cells
+covers YMAX, the $y$ size of the world.
+\item[THETACELLS]  The maximum number of cells along the $\theta$-axis of the
+configuration space grid.   The size of each cell in the $\theta$ direction,
+given in the world editor, should be sufficiently large that THETACELLS cells
+covers $2\pi$.
+\item[TOOLOFFSET]  For use with Adept files.  Distance between the center of 
+the gripper and the plane of the pusher.
+\item[BACKUP]  For use with Adept files.  Distance to place the pusher
+behind the object when lowering/raising the pusher.
+\end{description}
+
+\section{Running plans on an Adept robot}
+The planner produces Adept programs by copying {\tt prog.header},
+then writing the plan, and finally closing the program by copying
+{\tt prog.trailer}.  The final file is {\tt push.pg}.
+
+In our lab, we execute pushing plans with an Adept robot by doing the
+following:
+\begin{enumerate}
+\item Create a pushing problem, solve it, and write the Adept file.
+\item Print out a postscript version of the world and place it at
+a fixed position in the Adept's workspace.  Place the object at the
+start position on the paper world.
+\item Transfer the file {\tt push.pg} to an Adept directory with the
+file {\tt zero.pg}.  {\tt zero.pg} handles the case where joint 4
+(gripper orientation) of the Adept reaches a joint limit during execution.
+\item Load the two files into memory and run the program by 
+{\tt execute pushing}.  
+\end{enumerate}
+
+To reproduce this setup in your lab, modify the file {\tt prog.header}
+so that the BASE definition specifies the origin of your pushing world.
+In the file {\tt pglobals.h}, set TOOLOFFSET to whatever is appropriate
+for your pusher.  {\tt prog.header} and {\tt prog.trailer} assume that
+the pusher is sitting at the location {\tt pusher}, and the Adept picks
+up the pusher at the beginning of the plan and places it back at the
+same position at the end.  Modify these two files according to your 
+setup.
+
+The dimensions of the printed world will be XMAX by YMAX in millimeters.
+
+\end{document}

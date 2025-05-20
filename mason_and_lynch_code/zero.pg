@@ -1,0 +1,29 @@
+.PROGRAM zerodegrees()
+	GLOBAL above
+	HERE #tempos
+	DECOMPOSE x[] = #tempos
+	IF ((x[3]+15) > 270) OR ((x[3]-15) < -270) THEN
+	    BREAK
+	    SPEED 100 ALWAYS
+            TYPE "Zeroing away from joint limit..."
+	    HERE loc
+	    TOOL fake.tool
+	    SPEED 5
+	    MOVE loc
+	    BREAK
+	    APPRO loc, above
+	    BREAK
+	    HERE #loc2
+	    DECOMPOSE k[] = #loc2
+	    MOVE #PPOINT(k[0],k[1],k[2],0)
+	    BREAK
+	    APPRO loc, above
+	    BREAK
+	    MOVE loc
+	    TOOL hand.tool
+	    BREAK
+	    SPEED 5 ALWAYS
+	    MOVES loc
+	    BREAK
+	END
+.END

@@ -1,0 +1,89 @@
+This directory contains code implementing the algorithms described in
+the paper ``Stable Pushing: Mechanics, Controllability, and
+Planning,'' by Kevin Lynch and Matt Mason, International Journal of
+Robotics Research, to appear.  It is also available on the web at
+http://www.cs.cmu.edu/afs/cs/usr/lynch/www/research/kml-stable.html.
+
+The code allows a user to automatically find pushing plans to move an
+object among obstacles.  The strategy uses stable pushes, which keep
+the pushed object fixed to the pusher as it moves.  The pusher is
+assumed to be a flat edge.  The code consists of three major portions:
+
+1) The object editor, which allows the user to enter a polygonal
+object using a graphical interface.  The user must specify the center
+of mass of the object, the coefficient of friction at the pushing
+contacts, and the edges of the object that the robot can push.  The
+user may specify that the pusher act on the convex hull of the object.
+The editor then automatically determines the set of stable pushing
+directions for each edge, for use in the pushing planner.
+
+2)  The pushing world editor, which allows the user to specify pushing
+problems for the objects created with the object editor.  This consists
+of drawing the obstacles and specifying the start and goal positions.
+The editor also invokes the planner, and if a solution is found, it 
+displays and animates the path.
+
+3)  The push planner.  This is normally invoked by the world editor,
+but it can also be used from the command line.  The planner also (if
+desired) writes an Adept V+ file to execute the pushing path.
+
+The object and world editors are written in Tcl/Tk, and the planner is
+written in C.  The planner was written by Kevin Lynch, with
+modifications by Costa Nikou, and the object and world editors were
+written by Costa Nikou, with modifications by Kevin Lynch.
+
+In addition to this README file, this directory should contain the
+following files.
+
+For the object and world editors:
+	editor.tcl		The main file.  This executable should
+				be run from the command line or source'd
+				within a wish shell.
+	analysis.tcl
+	buttons.tcl
+	edgeclick.tcl
+   	editbw.tcl
+	editcolors.tcl
+	example.path		solution to example.problem
+	example.problem		an example problem
+	globals.tcl
+	goal.tcl
+	graham.tcl
+	helpers.tcl
+	linedraw.tcl
+	ob_buttons.tcl
+	obedit.tcl
+	obeditglobals.tcl
+	objects.tcl
+	path.tcl
+	rotation.tcl
+	start.tcl
+
+For the push planner:
+	makefile
+	pglobals.h
+	pplanner.c
+	prog.header		for writing Adept files
+	prog.trailer		for writing Adept files
+
+Other:
+	manual.ps
+	zero.pg			auxiliary Adept routine
+
+After uncompressing the archive, create the pplanner executable by
+'make pplanner'.  For best results, the editor should be run on a 
+fast machine with a color monitor and plenty of swap space.
+
+Feel free to distribute or modify the files, but the copyright notice
+should be preserved.  
+
+Copyright (c) 1995 by Kevin Lynch, Constantinos Nikou, and Matthew Mason.
+All rights reserved.  Use this code at your own risk.
+
+Comments and suggestions are welcome.  Send them to lynch@ri.cmu.edu, or
+
+	Kevin Lynch
+	The Robotics Institute
+	Carnegie Mellon University
+	5000 Forbes Avenue
+	Pittsburgh, PA 15213-3891

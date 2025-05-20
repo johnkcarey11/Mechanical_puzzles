@@ -1,0 +1,17 @@
+
+  TOOL fake.tool
+  MOVES pos
+  BREAK
+  SPEED 100 always
+  DEPARTS above
+  SET null.tool = TRANS(0,0,0,0,0,0)
+  TOOL null.tool
+  APPRO pusher,above
+  SPEED 10
+  MOVES pusher
+  OPENI
+  SPEED 100
+  DEPARTS above
+  SPEED 20 MONITOR
+  RETURN
+.END
